@@ -1,0 +1,60 @@
+# Vert.x REST API Microservice
+
+This project is a high-performance microservice developed using Java Vert.x framework and PostgreSQL. It's designed to handle a large number of requests per second, optimized for scalability and responsiveness.
+
+## Key Components
+
+### Routes
+Routes define the API endpoints and their corresponding handlers for processing incoming requests. They handle the routing of HTTP requests to the appropriate controllers.
+
+### Controllers
+Controllers implement the business logic for handling requests received from the routes. They orchestrate the flow of data and operations based on the incoming requests.
+
+### Services
+Services provide additional functionalities and services required by the controllers. They encapsulate reusable business logic that can be shared across different parts of the application.
+
+### Middlewares
+Middlewares house middleware functions for request processing and validation. They enhance the functionality of routes and controllers by adding pre-processing or post-processing logic to the request handling pipeline.
+
+### Configurations
+Configurations contain environment-specific settings such as database connections, API keys, and other configuration parameters. They ensure the application behaves correctly across different environments (development, staging, production).
+
+## Testing
+The microservice has been rigorously tested using Apache Benchmark load testing on a local machine. Performance metrics indicate it can handle up to 12300 requests per second under optimal conditions.
+
+## Setup Instructions
+To run this microservice locally, follow these steps:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/your-username/vertx-rest-api-microservice.git
+   cd vertx-rest-api-microservice
+
+image:https://img.shields.io/badge/vert.x-4.4.4-purple.svg[link="https://vertx.io"]
+
+This application was generated using http://start.vertx.io
+
+== Building
+
+To launch your tests:
+```
+./gradlew clean test
+```
+
+To package your application:
+```
+./gradlew clean assemble
+```
+
+To run your application:
+```
+./gradlew clean run
+or 
+sh ./run.sh
+```
+
+== Help
+
+* https://vertx.io/docs/[Vert.x Documentation]
+
+

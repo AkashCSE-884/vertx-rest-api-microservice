@@ -1,0 +1,192 @@
+package com.example.dbm.middleware;
+
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.JWTOptions;
+import io.vertx.ext.auth.PubSecKeyOptions;
+import io.vertx.ext.auth.jwt.JWTAuth;
+import io.vertx.ext.auth.jwt.JWTAuthOptions;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.JWTAuthHandler;
+
+public class JwtMiddleware {
+    // private final JWTAuth jwtAuth;
+    private Vertx vertx;
+    private JWTAuth provider;
+
+    public JwtMiddleware(Vertx vertx) {
+        this.vertx = vertx;
+        provider = JWTAuth.create(vertx, new JWTAuthOptions()
+        .addPubSecKey(new PubSecKeyOptions()
+        .setAlgorithm("HS256")
+        .setBuffer("keyboard cat")));
+        // provider = JWTAuth.create(vertx, new JWTAuthOptions()
+        //         .addPubSecKey(new PubSecKeyOptions()
+        //                 .setAlgorithm("ES256")
+        //                 .setBuffer(
+        //                         "-----BEGIN PUBLIC KEY-----\n" +
+        //                                 "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEraVJ8CpkrwTPRCPluUDdwC6b8+m4\n" +
+        //                                 "dEjwl8s+Sn0GULko+H95fsTREQ1A2soCFHS4wV3/23Nebq9omY3KuK9DKw==\n" +
+        //                                 "-----END PUBLIC KEY-----"))
+        //         .addPubSecKey(new PubSecKeyOptions()
+        //                 .setAlgorithm("ES256")
+        //                 .setBuffer(
+        //                         "-----BEGIN PRIVATE KEY-----\n" +
+        //                                 "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgeRyEfU1NSHPTCuC9\n" +
+        //                                 "rwLZMukaWCH2Fk6q5w+XBYrKtLihRANCAAStpUnwKmSvBM9EI+W5QN3ALpvz6bh0\n" +
+        //                                 "SPCXyz5KfQZQuSj4f3l+xNERDUDaygIUdLjBXf/bc15ur2iZjcq4r0Mr\n" +
+        //                                 "-----END PRIVATE KEY-----")));
+    }
+
+    public void generateToken(RoutingContext context) {
+        // String username = "exampleUser"; // Replace with actual username
+        // String token = jwtAuth.generateToken(new JsonObject().put("sub", username),
+        // new JWTOptions());
+        // // context.response().putHeader("Authorization", "Bearer " + token);
+
+        // JsonObject jo = new JsonObject().put("token", token);
+        // context.response().send(jo.toString());
+
+        System.out.println(context.request().getParam("name"));
+        // String token = provider.generateToken(new JsonObject().put("name",
+        // context.request().getParam("name")));
+        String token = provider.generateToken(
+                new JsonObject().put("name", context.request().getParam("name")),
+                new JWTOptions().setAlgorithm("HS256"));
+        context.response().putHeader("Authorization", "Bearer " + token);
+        JsonObject jo = new JsonObject().put("token", token);
+        context.response().send(jo.toString());
+    }
+
+    // public void validateToken(RoutingContext context) {
+
+    // var jwtToken =
+    // context.request().getHeader(HttpHeaders.AUTHORIZATION).substring("Bearer
+    // ".length());
+    // System.out.println(jwtToken);
+    // if (jwtToken != null) {
+
+    // System.out.println(jwtToken);
+    // provider.authenticate(new JsonObject().put("name", jwtToken), res -> {
+    // System.out.println(res.failed());
+    // if (res.succeeded()) {
+
+    // context.next();
+    // } else {
+
+    // context.response().setStatusCode(401).end();
+    // }
+    // });
+    // } else {
+
+    // // status
+    // context.response().setStatusCode(401).end();
+    // }
+    // }
+    public JWTAuthHandler createJWTAuthHandler() {
+        return JWTAuthHandler.create(provider);
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////
+
+
+package com.example.dbm.controller;
+
+import com.example.dbm.middleware.JwtMiddleware;
+import com.example.dbm.service_container.ServiceContainer;
+
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
+
+public class LoginController extends Controller {
+    private JwtMiddleware jwtMiddleware;
+
+    public LoginController(ServiceContainer serviceContainer) {
+        super(serviceContainer);
+
+    }
+
+    public void generateToken(RoutingContext ctx) {
+
+        this.jwtMiddleware = serviceContainer.resolve(JwtMiddleware.class);
+
+        ctx.request().bodyHandler(buffer -> {
+            // String requestBody = buffer.toString();
+            JsonObject jsonObject = buffer.toJsonObject();
+            String name = jsonObject.getString("name");
+            String id = jsonObject.getString("id");
+
+            if (id == null || id.isEmpty()) {
+                JsonObject errorResponse = new JsonObject()
+                        .put("error", "ID parameter is required and cannot be empty.");
+                ctx.response()
+                        .setStatusCode(401)
+                        .end(errorResponse.encode());
+
+            }
+            System.out.println("Received request body id: " + id);
+            String token = this.jwtMiddleware.generateToken(ctx, id);
+            // System.out.print(token);
+            ctx.response()
+                    .putHeader("Authorization", "Bearer " + token)
+                    .end("{\"status\": \"success\"}");
+        });
+        // String id = ctx.request().getParam("id");
+        // JsonObject payload = ctx.getBodyAsJson();
+        // String requestBody = ctx.getBodyAsString();
+        // System.out.println("Received request body: " + requestBody);
+        // System.out.println(payload);
+        // if (id == null || id.isEmpty()) {
+
+        // JsonObject errorResponse = new JsonObject()
+        // .put("error", "ID parameter is required and cannot be empty.");
+        // ctx.response()
+        // .setStatusCode(401)
+        // .end(errorResponse.encode());
+
+        // }
+
+        // String token = this.jwtMiddleware.generateToken(ctx);
+
+        // ctx.response().putHeader("Authorization", "Bearer " + token);
+        // JsonObject response = new JsonObject().put("token", token);
+        // ctx.response().end(response.encode());
+        // String token = jwtMiddleware::generateToken(ctx)
+
+    }
+}
+
+
+    public void generateToken(RoutingContext ctx){
+       
+        this.jwtMiddleware = serviceContainer.resolve(JwtMiddleware.class);
+
+        JsonObject requestBody = ctx.getBodyAsJson();
+        System.out.println("Received request body: " + requestBody);
+        ctx.request().bodyHandler(buffer -> {
+            JsonObject obj = buffer.toJsonObject();
+
+            String token = this.jwtMiddleware.generateToken(ctx);
+            System.out.print(token);
+            ctx.response()
+                    .putHeader("content-type", "application/json")
+                    .end("{\"status\": \"success\"}");
+        });
+
+
+    }
